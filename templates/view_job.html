@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NetSTAR Clustering App (non-gpu)</title>
+
+  <!-- Bootstrap CSS -->
+  <!-- <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"> -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    .btn i {
+      transition: transform 0.2s;
+    }
+
+    .btn:hover i {
+      transform: scale(1.1);
+    }
+
+    .scroll {
+      max-height: 350px;
+      overflow-y: auto;
+    }
+
+    /* Floating Scroll Up Button */
+    #scrollUpBtn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      z-index: 999;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      outline: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+      cursor: pointer;
+      display: none;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    #scrollUpBtn:hover {
+      background-color: #0056b3;
+      transform: scale(1.1);
+    }
+
+    .image-container:hover .overlay-text {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .overlay-text {
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+
+    .dropdown-menu {
+      text-overflow: ellipsis;
+    }
+
+    /* Apply truncation for dropdown items */
+    .dropdown-item {
+      display: block;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+
+    }
+
+    /* Optional: same styling for the default label */
+    .dropdown-label {
+      display: inline-block;
+      max-width: 130px;
+      min-width: 130px;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: middle;
+    }
+
+    .green-icon {
+      color: green;
+    }
+
+    .checkbox {
+      margin-left: 10px;
+      margin-right: 10px;
+      display: flex;
+      align-items: center;
+    }
+
+    .checkbox+a {
+      margin-left: -10px;
+    }
+      
+  </style>
+
+
+</head>
+
+<body>
+
+  <!-- Navbar at the top -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand text-white fw-bold" href="/">NetSTAR Clustering App (non-gpu)</a>
+
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link text-white fw-bold" href="/">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-white fw-bold" href="/jobs">Jobs</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+
+  <!-- Display the message (if there is one) -->
+  {% if message %}
+  <div class="alert alert-info" role="alert">
+    {{ message }}
+  </div>
+  {% endif %}
+
+
+  <div class="container mt-4">
+
+    <!-- Job Details -->
+    <h4>
+      Job Details
+      <button class="btn btn-sm btn-outline-light text-dark" type="button" data-bs-toggle="collapse"
+        data-bs-target="#jobDetails" aria-expanded="{{ 'true' if not request.args.get('collapse') else 'false' }}"
+        aria-controls="jobDetails">
+        <span class="collapse-toggle">▲</span>
+      </button>
+    </h4>
+
+    <!-- Conditional show class based on ?collapse=true -->
+    <div id="jobDetails" class="collapse {% if not request.args.get('collapse') %}show{% endif %}">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Job ID: {{ job.job_id }}</h5>
+          <p><strong>Description:</strong> {{ job.job_description }}</p>
+          <p><strong>Clustering Algorithm:</strong> {{ job.clustering_algorithm }}</p>
+          <p><strong>Input Type:</strong> {{ job.input_type }}</p>
+          <p><strong>Number of Clusters:</strong> {{ job.num_clusters }}</p>
+          <p><strong>Input Method:</strong> {{ job.input_method }}</p>
+          <p><strong>Folder Path:</strong> {{ job.folder_path }}</p>
+          <p><strong>Image Encoding:</strong> {{ job.image_encoding }}</p>
+          <p><strong>Date & Time:</strong> {{ job.job_submission_time }}</p>
+
+          <a href="/jobs" class="btn btn-secondary mt-3">Back to Jobs</a>
+          <!-- <a href="/rerun?id={{ job.job_id }}" class="btn btn-secondary mt-3">Re-Run</a> -->
+        </div>
+      </div>
+    </div>
+
+    <h4>
+      Job Status
+      <button class="btn btn-sm btn-outline-light text-dark" type="button" data-bs-toggle="collapse"
+        data-bs-target="#jobStatus" aria-expanded="{{ 'true' if not request.args.get('collapse') else 'false' }}"
+        aria-controls="jobStatus">
+        <span class="collapse-toggle">▲</span>
+      </button>
+    </h4>
+
+    <!-- Collapse logic controlled by query param -->
+    <div id="jobStatus" class="collapse {% if not request.args.get('collapse') %}show{% endif %}">
+      <div class="card">
+        <div class="card-body">
+          <div class="row">
+            <!-- First Column -->
+            <div class="col-md-6">
+              <p><strong>Status:</strong> {{ job_status.status }}</p>
+              <p><strong>Job Start Time:</strong> {{ job_status.job_start_time }}</p>
+              <p><strong>Job End Time:</strong> {{ job_status.job_end_time }}</p>
+              <p><strong>Total Progress:</strong> {{ job_status.total_progress }}</p>
+              <p><strong>Converting to Embeddings Progress:</strong> {{
+                job_status.converting_images_to_embeddings_progress }}</p>
+              <p><strong>Start Time (Embeddings):</strong> {{ job_status.start_time_converting_images_to_embeddings }}
+              </p>
+              <p><strong>End Time (Embeddings):</strong> {{ job_status.end_time_converting_images_to_embeddings }}</p>
+            </div>
+
+            <!-- Second Column -->
+            <div class="col-md-6">
+              <p><strong>Images Processed:</strong> {{ job_status.images_processed_for_embeddings }} / {{
+                job_status.total_images }}</p>
+              <p><strong>Embedding Time:</strong> {{ job_status.time_taken_to_compute_embeddings }}</p>
+              <p><strong>GPU Memory (Embeddings):</strong> {{ job_status.gpu_memory_usage_converting_images }}</p>
+              <p><strong>Clustering Progress:</strong> {{ job_status.performing_clustering_progress }}</p>
+              <p><strong>Start Time (Clustering):</strong> {{ job_status.start_time_performing_clustering }}</p>
+              <p><strong>End Time (Clustering):</strong> {{ job_status.end_time_performing_clustering }}</p>
+              <p><strong>Clustering Time:</strong> {{ job_status.time_taken_to_perform_clustering }}</p>
+              <p><strong>GPU Memory (Clustering):</strong> {{ job_status.gpu_memory_usage_clustering }}</p>
+              <p><strong>Status Message:</strong> {{ job_status.job_status_message }}</p>
+              <p><strong>Estimated Time Left:</strong> {{ job_status.estimated_time_left }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- <img src="{{ url_for('serve_image') }}?path=/tsne-plots.png" class="img-fluid img-thumbnail" alt="Image"> -->
+
+    {% if job_status.status == "completed" %}
+
+    <div class="container mt-4">
+
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <!-- Cluster Info -->
+        <h4 class="mb-0 me-3">Cluster {{ selected_cluster }}, Total Images={{ total_images }}</h4>
+
+        <!-- Add this just above your cluster/page navigation buttons -->
+        <!-- <div id="cluster-nav"></div> -->
+
+        <!-- Cluster Navigation -->
+        <div class="d-flex align-items-center">
+          {% if selected_cluster > 0 %}
+          <a class="btn btn-primary me-2"
+            href="/view?id={{ job.job_id }}&cluster={{ selected_cluster - 1 }}&page=0&collapse=true">
+            <i class="bi bi-arrow-left-circle-fill me-1"></i> Previous Cluster
+          </a>
+          {% endif %}
+          {% if selected_cluster < total_clusters - 1 %} <a class="btn btn-primary me-2"
+            href="/view?id={{ job.job_id }}&cluster={{ selected_cluster + 1 }}&page=0&collapse=true">
+            Next Cluster <i class="bi bi-arrow-right-circle-fill ms-1"></i>
+            </a>
+            {% endif %}
+        </div>
+
+      </div>
+
+      <!-- Include this Bootstrap Modal once, outside your loop -->
+      <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content">
+
+            <!-- Modal Header with Dropdown and Close Button -->
+            <div class="modal-header d-flex justify-content-between align-items-center">
+
+
+              <!-- Close Button -->
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Body with Image -->
+            <div class="modal-body text-center">
+              <img id="modalImage" src="" class="img-fluid" alt="Popup Image">
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="container my-4">
+
+        <!-- Combined Dropdown Row -->
+        <div class="row mb-4">
+          <div class="col-md-12 d-flex align-items-center">
+            <label class="me-3 fw-bold">Apply category to all images:</label>
+
+            <!-- Global Category Dropdown -->
+            <div class="dropdown custom-category-dropdown global-category-dropdown me-3">
+              <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                <span class="dropdown-label">Select Category</span>
+              </button>
+              <ul class="dropdown-menu vh-30 overflow-auto p-2 scroll">
+                <li>
+                  <input type="text" class="form-control mb-2 dropdown-search" placeholder="Search...">
+                </li>
+                {% for category in categories %}
+                <li><a class="dropdown-item category-option" href="#">{{ category }}</a></li>
+                {% endfor %}
+              </ul>
+            </div>
+
+            <!-- Show Category Counts Dropdown -->
+            <div class="dropdown" id="counts-dropdown">
+              <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                <span class="dropdown-label">See Stats</span>
+              </button>
+              <ul class="dropdown-menu vh-40 overflow-auto p-2 scroll" id="counts-dropdown-menu">
+                <li>
+                  <input type="text" class="form-control mb-2 dropdown-search" placeholder="Search...">
+                </li>
+                {% for category in labeled_data_counts %}
+                    {% if "Total" == category[:5] %}
+                        <hr>
+                    {% endif %}
+                    <li><a class="dropdown-item category-option" href="#">{{ category }} – {{ labeled_data_counts[category]}}</a></li>
+                {% endfor %}
+                <li><a class="dropdown-item category-option" id="f1_score" href="#">{{ "F1-Score" }} – {{ f1_score }}</a></li>
+                <li><a class="dropdown-item category-option" id="accuracy_score" href="#">{{ "Accuracy" }} – {{ accuracy_score }}</a></li>
+                  
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="row">
+          {% for i in range(0, image_paths|length, 4) %}
+          <div class="row mb-5">
+            {% for j in range(4) %}
+            {% set idx = i + j %}
+            {% if idx < image_paths|length %} {% set img_path=image_paths[idx] %}
+           
+
+
+            {% if "predicted_labels" in job %}
+            {% set default_label = (
+            job["corrected_labels"][img_path] if img_path in job["corrected_labels"]
+            else (job["predicted_labels"][img_path][0] if job["predicted_labels"][img_path][0] else "Select Category")
+            ) %}
+            {% else %}
+            {% set default_label = job["corrected_labels"][img_path] if img_path in job["corrected_labels"] else "Select Category"
+            %}
+            {% endif %}
+          
+            <div class="col-md-3">
+              <!-- Image -->
+              <!-- <img src="{{ url_for('serve_image') }}?path={{ img_path }}"
+                class="img-fluid img-thumbnail mb-2 popup-image" alt="Image" data-bs-toggle="modal"
+                data-bs-target="#imageModal" data-img-src="{{ url_for('serve_image') }}?path={{ img_path }}"> -->
+
+
+                <div class="position-relative d-inline-block image-container">
+                  <img
+                    src="{{ url_for('serve_image') }}?path={{ img_path }}"
+                    class="img-fluid img-thumbnail mb-2 popup-image"
+                    alt="Image"
+                    data-bs-toggle="modal"
+                    data-bs-target="#imageModal"
+                    data-img-src="{{ url_for('serve_image') }}?path={{ img_path }}"
+                  >
+                 
+                 {% if ("predicted_labels" in job) and (job["predicted_labels"][ img_path ][0]) %}
+                  <div class="overlay-text position-absolute bottom-0 start-0 bg-dark text-white px-2 py-1 rounded m-3">
+                    Predicted: {{job["predicted_labels"][ img_path ][0]}} ({{job["predicted_labels"][ img_path ][1]}})
+                  </div>
+                  {% endif %}
+                 </div>
+
+
+              <!-- Individual Dropdown -->
+              <div class="dropdown custom-category-dropdown d-flex justify-content-between align-items-center ">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                  aria-expanded="false">
+                  <span class="dropdown-label">{{ default_label }}</span>
+                </button>
+                <ul class="dropdown-menu vh-50 overflow-auto p-2 scroll">
+                  <li>
+                    <input type="text" class="form-control mb-2 dropdown-search" placeholder="Search...">
+                  </li>
+                  {% for category in categories %}
+                  <li><a class="dropdown-item category-option" href="#">{{ category }}</a></li>
+                  {% endfor %}
+                  <li>
+                    <hr class="dropdown-divider">
+                  </li>
+                  <li>
+                    <input type="text" class="form-control other-category-input" placeholder="Other (specify)">
+                  </li>
+                </ul>
+
+                 <label class="checkbox">
+                  <input type="checkbox" id="myCheckbox_{{img_path}}" onchange="onCheckboxChange(this,'{{job.job_id}}', '{{img_path}}','{{default_label}}')" {{checkbox_status.get(img_path,"")}} >
+                </label> 
+                  
+                <a href="{{ 'http://'+img_path.split('/')[-2].replace('_', '.') }}" target="_blank" class="text-decoration-none">
+                  <i class="bi bi-globe" style="font-size: 1.2rem; color: #007bff;"></i>
+                </a>
+              </div>
+
+
+              <!-- Hidden input for selected value -->
+              <input type="hidden" name="selected_category_{{ idx }}" class="selected-category"
+                value="{{ default_label if default_label != 'Select Category' else '' }}">
+
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+
+
+
+      <!-- Page Navigation Start -->
+
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+
+        <!-- Page Navigation -->
+        <div class="d-flex align-items-center gap-2 ms-auto">
+          {% if page > 0 %}
+          <a class="btn btn-secondary"
+            href="/view?id={{ job.job_id }}&cluster={{ selected_cluster }}&page={{ page - 1 }}&collapse=true">
+            <i class="bi bi-chevron-left me-1"></i> Previous 40 Screenshots
+          </a>
+          {% endif %}
+          {% if image_paths|length == 40 %}
+          <a class="btn btn-secondary"
+            href="/view?id={{ job.job_id }}&cluster={{ selected_cluster }}&page={{ page + 1 }}&collapse=true">
+            Next 40 Screenshots <i class="bi bi-chevron-right ms-1"></i>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Page Navigation End -->
+
+    </div>
+
+
+
+  </div>
+  {% endif %}
+
+  <button onclick="scrollToTop()" id="scrollUpBtn" title="Scroll to top">↑</button>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='view_job.js') }}"> </script>
+  <script>
+    const scrollBtn = document.getElementById("scrollUpBtn");
+
+    window.onscroll = () => {
+      if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+        scrollBtn.style.display = "block";
+      } else {
+        scrollBtn.style.display = "none";
+      }
+    };
+
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
+
+</body>
+
+</html>

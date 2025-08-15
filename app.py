@@ -20,7 +20,7 @@ import shutil
 from collections import Counter
 from sklearn.metrics import accuracy_score, f1_score
 import pandas as pd
-
+import routes
 
 
 app = Flask(__name__)
@@ -29,10 +29,7 @@ cwd = os.getcwd()
 
 print( "cwd:", cwd  )
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
+app.register_blueprint(routes.index)
 
 upload_folder = os.path.join( cwd ,  "data/uploaded/")
 print( "upload_folder:", upload_folder )

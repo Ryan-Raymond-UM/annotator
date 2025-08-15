@@ -30,6 +30,7 @@ cwd = os.getcwd()
 print( "cwd:", cwd  )
 
 app.register_blueprint(routes.index)
+app.register_blueprint(routes.admin)
 
 upload_folder = os.path.join( cwd ,  "data/uploaded/")
 print( "upload_folder:", upload_folder )

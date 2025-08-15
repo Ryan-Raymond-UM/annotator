@@ -1,27 +1,27 @@
-from flask import Flask, render_template, request, jsonify
-from flask import send_file, abort
-import mimetypes
-from requests.exceptions import Timeout
-
-import os
-import uuid
-import time
-import subprocess
-import zipfile
+import collections
+import datetime
 import glob
 import json
-import datetime
-from image_functions import perform_clustering, categories, category_mapping
-import threading
-from filelock import FileLock
-import py7zr
-import tempfile
-import shutil
-from collections import Counter
-from sklearn.metrics import accuracy_score, f1_score
+import mimetypes
+import os
 import pandas as pd
-import routes
+import py7zr
+import shutil
+import subprocess
+import tempfile
+import threading
+import time
+import uuid
+import zipfile
 
+from filelock import FileLock
+from flask import Flask, render_template, request, jsonify
+from flask import send_file, abort
+from image_functions import perform_clustering, categories, category_mapping
+from requests.exceptions import Timeout
+from sklearn.metrics import accuracy_score, f1_score
+
+import routes #local
 
 app = Flask(__name__)
 

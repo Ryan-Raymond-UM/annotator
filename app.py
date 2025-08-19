@@ -64,6 +64,7 @@ def load_user(user_id):
 
 app.register_blueprint(routes.admin)
 app.register_blueprint(routes.index)
+app.register_blueprint(routes.jobs)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -251,21 +252,6 @@ def submit():
     threading.Thread(target=perform_clustering, args=(job_parameters,upload_folder, )).start()
     
     return jobs( message )
-
-@app.route('/jobs')
-def jobs( message = None ):
-    
-    all_jobs_path = glob.glob( "./data/*/job_parameters.json"  )
-    
-    jobs_list = []
-    
-    for job_path in all_jobs_path:
-        lock_path = job_path + ".lock"
-        with FileLock(lock_path):
-            with open( job_path ) as f:
-                jobs_list.append( json.load( f ) )
-    
-    return render_template( 'jobs.html' , jobs_list=jobs_list , message=message )
 
 @app.route('/view')
 def view_job():

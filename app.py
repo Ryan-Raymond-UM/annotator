@@ -42,10 +42,11 @@ login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-PUBLIC_ROUTES = {'login'}
+PUBLIC_ROUTES = {'login.login'}
 
 users = {'ryanray': {'password-hash': hashlib.sha256('ISuckBalls'.encode()).hexdigest()}}
-print(users)
+app.config['USERS'] = users
+app.config['USER'] = User
 
 @app.before_request
 def require_login():
@@ -53,7 +54,7 @@ def require_login():
 		return # Is public, do nothing
 	if flask_login.current_user.is_authenticated:
 		return # User is logged in, do nothing
-	return flask.redirect(flask.url_for('login'))
+	return flask.redirect('/login')#flask.url_for('login'))
 
 # https://flask-login.readthedocs.io/en/latest/#how-it-works
 @login_manager.user_loader
@@ -64,18 +65,8 @@ def load_user(user_id):
 
 app.register_blueprint(routes.admin)
 app.register_blueprint(routes.index)
+app.register_blueprint(routes.login)
 app.register_blueprint(routes.jobs)
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-	if request.method == 'POST':
-		username = request.form['username']
-		password = hashlib.sha256(request.form['password'].encode()).hexdigest()
-		print(password)
-		if username in users and users[username]['password-hash'] == password:
-			flask_login.login_user(User(username))
-			return flask.redirect('/')
-	return flask.render_template('login.html')
 
 @app.route('/submit', methods=['POST'])
 def submit():

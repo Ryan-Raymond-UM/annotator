@@ -10,6 +10,7 @@ import os
 import pandas as pd
 import py7zr
 import shutil
+import sqlitedict
 import subprocess
 import tempfile
 import threading
@@ -24,7 +25,9 @@ from image_functions import perform_clustering, categories, category_mapping
 from requests.exceptions import Timeout
 from sklearn.metrics import accuracy_score, f1_score
 
+import api # local
 import routes #local
+import ryan_custom_types #local
 
 class User(flask_login.UserMixin):
 	def __init__(self, username):
@@ -37,6 +40,7 @@ print( "upload_folder:", upload_folder )
 
 app = Flask(__name__)
 app.secret_key = "ISuckBalls"
+app.url_map.strict_slashes = False
 
 login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
@@ -44,8 +48,7 @@ login_manager.login_view = 'login'
 
 PUBLIC_ROUTES = {'login.login'}
 
-users = {'ryanray': {'password-hash': hashlib.sha256('ISuckBalls'.encode()).hexdigest()}}
-app.config['USERS'] = users
+app.config['user_db'] = sqlitedict.SqliteDict('users.sqlite', autocommit=True)
 app.config['USER'] = User
 
 @app.before_request
@@ -59,11 +62,10 @@ def require_login():
 # https://flask-login.readthedocs.io/en/latest/#how-it-works
 @login_manager.user_loader
 def load_user(user_id):
-	if user_id in users:
+	if user_id in app.config['user_db']:
 		return User(user_id)
 	return None
 
-app.register_blueprint(routes.admin)
 app.register_blueprint(routes.index)
 app.register_blueprint(routes.login)
 app.register_blueprint(routes.jobs)
@@ -504,7 +506,5 @@ def handle_zip_upload(uploaded_file, upload_folder):
         except Exception as e:
             print(f"Error while extracting: {e}")
 
-
 if __name__ == '__main__':
-    
-    app.run( host="0.0.0.0", port=8080, debug=True)
+	app.run( host="0.0.0.0", port=8080, debug=True)

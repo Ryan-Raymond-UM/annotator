@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Admin Panel</title>
+		<script src="/static/sha256.js"></script>
+		<script src="/static/api.js"></script>
+		<script src="/static/admin.js"></script>
+	</head>
+	<body>
+		<label for="create-form">
+			Create New User
+		</label>
+		<form id="create-form" onsubmit="create_form_handler(event)">
+			<input id="username" type="text" placeholder="username" required>
+			<input type="submit" value="Create User">
+		</form>
+		<select id="user-selector" name="user" onchange="user_selector_handler(event)">
+			<option disabled selected hidden value="">-- Please select a user --</option>
+		</select>
+		<br>
+		<label for="delete-form">
+			Delete User
+		</label>
+		<form id="delete-form" onsubmit="delete_form_handler(event)">
+			<input id="confirm-username" type="text" placeholder="Re-Type Username" required>
+			<input type="submit" value="Delete User">
+		</form>
+		<figure>
+			<figcaption>
+				User Data
+			</figcaption>
+			<table>
+				<tr>
+					<th><samp>username</samp></th>
+					<td><samp><span id="username-field"></span></samp></td>
+					<td>This field cannot be edited by you</td>
+				</tr>
+				<tr>
+					<th><samp>password-hash</samp></th>
+					<td><samp><span id="password-field"></span></samp></td>
+					<td>
+						<form id="update-password-form" onsubmit="update_password_form_handler(event)">
+							<input id="password" type="text" placeholder="New Password" required>
+							<input type="submit">
+						</form>
+					</td>
+				</tr>
+				<tr>
+					<th><samp>role</samp></th>
+					<td><samp><span id="role-field"></span></samp></td>
+					<td>
+						<form id="update-role-form" onsubmit="update_role_form_handler(event)">
+							<select id="role" name="role">
+								<option value="manager">manager</option>
+								<option value="staff">staff</option>
+							</select>
+							<input type="submit" value="Update Role">
+						</form>
+					</td>
+				</tr>
+			</table>
+		</figure>
+	</body>
+</html>

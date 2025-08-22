@@ -5,7 +5,7 @@ import hashlib
 blueprint = flask.Blueprint('login', __name__)
 @blueprint.route('/login', methods=['GET', 'POST'])
 def login():
-	users = flask.current_app.config['USERS']
+	users = flask.current_app.config['user_db']
 	User = flask.current_app.config['USER']
 	if flask.request.method == 'POST':
 		username = flask.request.form['username']
